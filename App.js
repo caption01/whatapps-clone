@@ -5,10 +5,14 @@ import { StyleSheet } from 'react-native';
 import { SafeAreaProvider } from 'react-native-safe-area-context';
 import * as SplashScreen from 'expo-splash-screen';
 import * as Font from 'expo-font';
+import { Provider } from 'react-redux';
+import AsyncStorage from '@react-native-async-storage/async-storage';
 
 import AppNavigator from './navigation/AppNavigator';
+import { store } from './store/store';
 
 SplashScreen.preventAutoHideAsync();
+// AsyncStorage.clear();
 
 const prepare = async () => {
   await Font.loadAsync({
@@ -51,9 +55,11 @@ const App = () => {
   }
 
   return (
-    <SafeAreaProvider style={styles.container} onLayout={onLayout}>
-      <AppNavigator />
-    </SafeAreaProvider>
+    <Provider store={store}>
+      <SafeAreaProvider style={styles.container} onLayout={onLayout}>
+        <AppNavigator />
+      </SafeAreaProvider>
+    </Provider>
   );
 };
 

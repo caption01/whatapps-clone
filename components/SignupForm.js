@@ -1,11 +1,15 @@
-import React, { Fragment, useReducer, useCallback } from 'react';
+import React, { Fragment, useReducer, useCallback, useState, useEffect } from 'react';
+import { ActivityIndicator, Alert } from 'react-native';
 import { FontAwesome, Feather } from '@expo/vector-icons';
+import { useDispatch, useSelector } from 'react-redux';
 
 import Input from '../components/Input';
 import SubmitButton from '../components/SubmitButton';
 
 import { validateInput } from '../utils/actions/formActions';
 import { reducer } from '../utils/reducers/formReducer';
+import { signup } from '../utils/actions/authActions';
+import colors from '../constants/colors';
 
 const initialState = {
   inputValidities: {
@@ -14,19 +18,57 @@ const initialState = {
     email: false,
     password: false,
   },
+  inputValues: {
+    firstName: '',
+    lastName: '',
+    email: '',
+    password: '',
+  },
   formIsValid: false,
 };
 
-const SignupForm = ({ onSubmitPress }) => {
-  const [formState, dispatch] = useReducer(reducer, initialState);
+const SignupForm = () => {
+  const dispath = useDispatch();
+
+  const [formState, dispatchFormState] = useReducer(reducer, initialState);
+  const [error, setError] = useState('');
+  const [isLoading, setIsLoading] = useState(false);
+
+  useEffect(() => {
+    if (error) {
+      Alert.alert(error);
+    }
+
+    setError('');
+  }, [error]);
 
   const inputChangeHandler = useCallback(
     (inputId, inputValue) => {
       const result = validateInput(inputId, inputValue);
-      dispatch({ inputId, validationResult: result });
+      dispatchFormState({ inputId, inputValue, validationResult: result });
     },
-    [dispatch]
+    [dispatchFormState]
   );
+
+  const authHandler = async () => {
+    try {
+      setIsLoading(true);
+
+      const action = signup({
+        firstName: formState.inputValues.firstName,
+        lastName: formState.inputValues.lastName,
+        email: formState.inputValues.email,
+        passsword: formState.inputValues.password,
+      });
+
+      await dispath(action);
+
+      setError('');
+    } catch (error) {
+      setError(error.message);
+      setIsLoading(false);
+    }
+  };
 
   return (
     <Fragment>
@@ -68,12 +110,16 @@ const SignupForm = ({ onSubmitPress }) => {
         onInputChange={inputChangeHandler}
         errorText={formState.inputValidities['password']}
       />
-      <SubmitButton
-        title="Sign up"
-        disabled={!formState.formIsValid}
-        onPress={onSubmitPress}
-        style={{ marginTop: 20 }}
-      />
+      {isLoading ? (
+        <ActivityIndicator size={'small'} color={colors.primary} style={{ marginTop: 10 }} />
+      ) : (
+        <SubmitButton
+          title="Sign up"
+          disabled={!formState.formIsValid}
+          onPress={authHandler}
+          style={{ marginTop: 20 }}
+        />
+      )}
     </Fragment>
   );
 };

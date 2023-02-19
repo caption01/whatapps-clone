@@ -1,30 +1,69 @@
-import React, { Fragment, useCallback, useReducer } from 'react';
+import React, { Fragment, useCallback, useReducer, useEffect, useState } from 'react';
 import { Feather } from '@expo/vector-icons';
+import { Alert, ActivityIndicator } from 'react-native';
+import { useDispatch, useSelector } from 'react-redux';
 
 import Input from '../components/Input';
 import SubmitButton from '../components/SubmitButton';
 
 import { validateInput } from '../utils/actions/formActions';
 import { reducer } from '../utils/reducers/formReducer';
+import { signin } from '../utils/actions/authActions';
+import colors from '../constants/colors';
+
+const testMode = true;
 
 const initialState = {
   inputValidities: {
-    email: false,
-    password: false,
+    email: testMode,
+    password: testMode,
   },
-  formIsValid: false,
+  inputValues: {
+    email: testMode ? 'aaa@test.com' : '',
+    password: testMode ? '123456' : '',
+  },
+  formIsValid: testMode,
 };
 
-const SigninForm = ({ onSubmitPress }) => {
-  const [formState, dispatch] = useReducer(reducer, initialState);
+const SigninForm = () => {
+  const dispath = useDispatch();
+
+  const [isLoading, setIsLoading] = useState(false);
+  const [error, setError] = useState('');
+  const [formState, dispatchFormState] = useReducer(reducer, initialState);
+
+  useEffect(() => {
+    if (error) {
+      Alert.alert(error);
+    }
+
+    setError('');
+  }, [error]);
 
   const inputChangeHandler = useCallback(
     (inputId, inputValue) => {
       const result = validateInput(inputId, inputValue);
-      dispatch({ inputId, validationResult: result });
+      dispatchFormState({ inputId, inputValue, validationResult: result });
     },
-    [dispatch]
+    [dispatchFormState]
   );
+
+  const authHandler = async () => {
+    try {
+      setIsLoading(true);
+
+      const action = signin({
+        email: formState.inputValues.email,
+        passsword: formState.inputValues.password,
+      });
+
+      await dispath(action);
+      setError('');
+    } catch (error) {
+      setError(error.message);
+      setIsLoading(false);
+    }
+  };
 
   return (
     <Fragment>
@@ -37,6 +76,7 @@ const SigninForm = ({ onSubmitPress }) => {
         keyboardType="email-address"
         onInputChange={inputChangeHandler}
         errorText={formState.inputValidities['email']}
+        value={formState.inputValues['email']}
       />
       <Input
         id="password"
@@ -47,13 +87,18 @@ const SigninForm = ({ onSubmitPress }) => {
         secureTextEntry
         onInputChange={inputChangeHandler}
         errorText={formState.inputValidities['password']}
+        value={formState.inputValues['password']}
       />
-      <SubmitButton
-        title="Sign in"
-        disabled={!formState.formIsValid}
-        onPress={onSubmitPress}
-        style={{ marginTop: 20 }}
-      />
+      {isLoading ? (
+        <ActivityIndicator size={'small'} color={colors.primary} style={{ marginTop: 10 }} />
+      ) : (
+        <SubmitButton
+          title="Sign in"
+          disabled={!formState.formIsValid}
+          onPress={authHandler}
+          style={{ marginTop: 20 }}
+        />
+      )}
     </Fragment>
   );
 };
