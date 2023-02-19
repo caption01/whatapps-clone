@@ -2,14 +2,14 @@ import {} from 'react';
 import { View, Text, StyleSheet, Button } from 'react-native';
 
 const ChatListScreen = (props) => {
-  const goToSettingsScreen = () => {
-    props.navigation.navigate('ChatSettings');
+  const goTo = () => {
+    props.navigation.navigate('ChatScreen');
   };
 
   return (
     <View style={styles.container}>
       <Text>Chat Screen</Text>
-      <Button title="Go to Setings" onPress={goToSettingsScreen} />
+      <Button title="Go to ChatScreen" onPress={goTo} />
     </View>
   );
 };
